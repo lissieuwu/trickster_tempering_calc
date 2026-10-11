@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trickster Tempering Calculator</title>
+  <!-- Chart.js for graphs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg-kawaii: #1a102a; /* Deep purple background */
+      --window-border: #fca5a5; /* Fuzzy pink border */
+      --header-grad: linear-gradient(180deg, #d8b4fe 0%, #a78bfa 100%); /* Lavender gradient header */
+      --text-dark: #1e293b;
+    }
+
+    /* GLOBAL CUSTOM PINK HEART CURSOR */
+    * {
+      cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="%23f472b6" stroke="white" stroke-width="1.5"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/><circle cx="12" cy="12" r="13" fill="%23f472b6" fill-opacity="0.2" stroke="none"/></svg>'), auto !important;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-kawaii);
+      color: var(--text-dark);
+      margin: 0;
+      padding: 20px 10px;
+      display: flex;
+      justify-content: center;
+      background-image: radial-gradient(#fb923c40 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+
+    .window-frame {
+      max-width: 1000px;
+      width: 100%;
+      background: #f8fafc;
+      border: 6px solid var(--window-border);
+      border-radius: 20px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+      position: relative;
+    }
+
+    .window-frame::after {
+      content: "";
+      position: absolute;
+      top: -10px; left: -10px; right: -10px; bottom: -10px;
+      border: 8px solid #ffffff;
+      border-radius: 25px;
+      z-index: -1;
+      filter: blur(5px);
+      opacity: 0.8;
+    }
+
+    .window-header {
+      background: var(--header-grad);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 3px solid #6366f1;
+      border-radius: 14px 14px 0 0;
+    }
+
+    .header-title {
+      font-size: 1.35rem;
+      font-weight: bold;
+      color: #db2777; /* Cute pink */
+      text-align: center;
+      text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.8);
+      letter-spacing: 0.5px;
+    }
+
+    .tab-bar {
+      display: flex;
+      background: #e9d5ff;
+      border-bottom: 2px solid #cbd5e1;
+      padding: 6px 14px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container { padding: 16px; }
+
+    .layout-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    @media (max-width: 950px) {
+      .layout-grid { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      border: 2px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 14px;
+      background: #ffffff;
+      position: relative;
+    }
+
+    .panel-header {
+      font-weight: bold; font-size: 0.95rem;
+      color: #312e81;
+      margin-bottom: 10px;
+      display: flex; align-items: center; gap: 6px;
+    }
+
+    .stat-row-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stat-carrot-panel {
+      background: #ffedd5;
+      border: 2px solid #f97316;
+      border-radius: 15px;
+      padding: 6px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      box-shadow: 2px 2px 5px rgba(249, 115, 22, 0.2);
+    }
+
+    .stat-badge {
+      width: 45px;
+      text-align: center;
+      font-weight: bold; font-size: 0.85rem;
+      color: white;
+      padding: 3px 0;
+      border-radius: 5px;
+    }
+
+    .input-group {
+      display: flex; align-items: center; gap: 3px;
+      font-size: 0.8rem;
+      color: #475569;
+    }
+
+    .step-btn {
+      width: 20px; height: 22px;
+      border: 1px solid #94a3b8;
+      background: #e2e8f0;
+      font-weight: bold; border-radius: 4px;
+    }
+
+    input[type="number"] {
+      width: 45px; height: 20px;
+      text-align: center;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px; font-size: 0.9rem;
+    }
+
+    .action-btns {
+      display: flex; gap: 10px;
+      margin-top: 15px;
+    }
+
+    .kawaii-btn {
+      flex: 1; padding: 10px;
+      border: none; border-radius: 10px;
+      font-weight: bold; font-size: 0.9rem;
+      color: white;
+      transition: transform 0.1s;
+    }
+
+    .btn-analyze {
+      background: linear-gradient(180deg, #f97316 0%, #ea580c 100%);
+      border-radius: 30px 10px 10px 30px;
+    }
+
+    .btn-random {
+      background: linear-gradient(180deg, #d8b4fe 0%, #8b5cf6 100%);
+      border-radius: 10px 30px 30px 10px;
+    }
+
+    .kawaii-btn:active { transform: translateY(2px); }
+
+    .score-card {
+      background: #fdf2f8;
+      border: 3px solid #fca5a5;
+      border-radius: 15px;
+      padding: 12px;
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    .score-title { font-size: 1.1rem; font-weight: bold; color: #db2777; }
+    .rank-title { font-size: 1.15rem; font-weight: bold; color: #ea580c; margin-top: 3px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      text-align: center;
+    }
+
+    th, td {
+      border: 1px solid #e2e8f0;
+      padding: 6px;
+    }
+
+    th { background: #e0e7ff; color: #1e1b4b; }
+
+    .chart-container {
+      position: relative;
+      height: 350px;
+      width: 100%;
+    }
+
+    select {
+      padding: 5px 10px;
+      border-radius: 8px;
+      border: 2px solid #d8b4fe;
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: #5b21b6;
+      background: white;
+    }
+  </style>
+</head>
+<body>
+
+<div class="window-frame">
+  <!-- Centered Cute Pink Title Surrounded by Kawaii Carrots -->
+  <div class="window-header">
+    <div class="header-title">
+      🥕 Trickster Tempering Calculator 🥕
+    </div>
+  </div>
+
+  <!-- Gold Tempering Gem Bar -->
+  <div class="tab-bar">
+    <label style="display: flex; align-items: center; gap: 8px; color:#1e1b4b; font-weight: bold; font-size: 0.95rem;">
+      <input type="checkbox" id="goldStoneChk" onchange="calculateAndPlot()" style="width:16px; height:16px;"> 
+      🥕 Gold Tempering Gem (+15% Min & Max Cap)
+    </label>
+  </div>
+
+  <div class="container">
+    <div class="layout-grid">
+      <!-- Left: Inputs -->
+      <div class="panel">
+        <div class="panel-header">🛡️ Stats Ranges</div>
+        <div class="stat-row-container" id="statRowsContainer"></div>
+        
+        <div class="action-btns">
+          <button class="kawaii-btn btn-analyze" onclick="calculateAndPlot()">⚔️ Analyze</button>
+          <button class="kawaii-btn btn-random" onclick="randomizeInputs()">🎲 Random Fill</button>
+        </div>
+      </div>
+
+      <!-- Right: Results Table -->
+      <div class="panel">
+        <div class="score-card">
+          <div class="score-title" id="scoreText">Equipment Quality: N/A</div>
+          <div class="rank-title" id="rankText">Rank: -</div>
+        </div>
+        <div class="panel-header">📊 Tempering Thresholds</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Stat</th><th>Cur</th><th>Min</th><th>Max</th><th>80%</th><th>95%</th><th>Roll %</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Bottom: Chart -->
+    <div class="panel">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div class="panel-header" style="margin:0;">📈 Statistical Breakdown Graph</div>
+        <div>
+          <label style="font-size: 0.9rem; font-weight: bold; color: #5b21b6;">View Graph: </label>
+          <select id="viewSelector" onchange="updateChart()"></select>
+        </div>
+      </div>
+      <div class="chart-container">
+        <canvas id="statChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const stats = [
+    { name: 'AP', color: '#e11d48' },
+    { name: 'AC', color: '#2563eb' },
+    { name: 'DX', color: '#059669' },
+    { name: 'MP', color: '#7c3aed' },
+    { name: 'MA', color: '#db2777' },
+    { name: 'MD', color: '#0d9488' },
+    { name: 'WT', color: '#64748b' },
+    { name: 'DA', color: '#16a34a' },
+    { name: 'LK', color: '#d97706' },
+    { name: 'HP', color: '#dc2626' },
+    { name: 'DP', color: '#4f46e5' },
+    { name: 'HV', color: '#ea580c' }
+  ];
+
+  let chartInstance = null;
+  let lastStatsData = {};
+
+  const container = document.getElementById('statRowsContainer');
+  const selector = document.getElementById('viewSelector');
+  
+  const optOverview = document.createElement('option');
+  optOverview.value = 'Overview';
+  optOverview.textContent = 'Overview (Quality Score)';
+  selector.appendChild(optOverview);
+
+  stats.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.name;
+    opt.textContent = s.name;
+    selector.appendChild(opt);
+
+    const carrotPanel = document.createElement('div');
+    carrotPanel.className = 'stat-carrot-panel';
+    carrotPanel.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="stat-badge" style="background:${s.color}">${s.name}</div>
+        <div class="input-group">
+          <label style="color:#0284c7; font-weight:bold;">Cur:</label>
+          <button class="step-btn" onclick="adjust('${s.name}', 'cur', -1)">-</button>
+          <input type="number" id="${s.name}_cur" value="0" min="0">
+          <button class="step-btn" onclick="adjust('${s.name}', 'cur', 1)">+</button>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:space-between;">
+        <div class="input-group">
+          <label>Min:</label>
+          <input type="number" id="${s.name}_min" value="0" min="0">
+        </div>
+        <div class="input-group">
+          <label>Max:</label>
+          <input type="number" id="${s.name}_max" value="0" min="0">
+        </div>
+      </div>
+    `;
+    container.appendChild(carrotPanel);
+  });
+
+  function adjust(stat, type, delta) {
+    const el = document.getElementById(`${stat}_${type}`);
+    let val = parseInt(el.value) || 0;
+    el.value = Math.max(0, val + delta);
+  }
+
+  function randomizeInputs() {
+    stats.forEach(s => {
+      let mx = Math.floor(Math.random() * 250) + 30;
+      let mn = Math.floor(Math.random() * (mx - 10)) + 10;
+      let cur = Math.floor(Math.random() * (mx - mn + 1)) + mn;
+      document.getElementById(`${s.name}_min`).value = mn;
+      document.getElementById(`${s.name}_max`).value = mx;
+      document.getElementById(`${s.name}_cur`).value = cur;
+    });
+    calculateAndPlot();
+  }
+
+  function calculateAndPlot() {
+    const isGold = document.getElementById('goldStoneChk').checked;
+    const mult = isGold ? 1.15 : 1.0;
+
+    let totalPct = 0;
+    let validCount = 0;
+    lastStatsData = {};
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+
+    stats.forEach(s => {
+      let mnRaw = parseInt(document.getElementById(`${s.name}_min`).value) || 0;
+      let mxRaw = parseInt(document.getElementById(`${s.name}_max`).value) || 0;
+      let cur = parseInt(document.getElementById(`${s.name}_cur`).value) || 0;
+
+      if (mnRaw === 0 && mxRaw === 0 && cur === 0) return;
+
+      let mn = mnRaw * mult;
+      let mx = mxRaw * mult;
+      let avg = (mn + mx) / 2.0;
+      let p80 = mx * 0.8;
+      let p95 = mx * 0.95;
+      let rollPct = mx > 0 ? (cur / mx) * 100 : (cur >= mn ? 100 : 0);
+
+      lastStatsData[s.name] = { cur, min: mn, max: mx, avg, p80, p95, rollPct, color: s.color };
+
+      if (mx > 0) {
+        totalPct += Math.min(100, rollPct);
+        validCount++;
+      }
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-weight:bold; color:${s.color}">${s.name}</td>
+        <td>${cur}</td>
+        <td>${mn.toFixed(1)}</td>
+        <td>${mx.toFixed(1)}</td>
+        <td>${p80.toFixed(1)}</td>
+        <td>${p95.toFixed(1)}</td>
+        <td style="font-weight:bold">${rollPct.toFixed(1)}%</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    if (validCount > 0) {
+      let avgRoll = totalPct / validCount;
+      document.getElementById('scoreText').textContent = `Equipment Quality: ${avgRoll.toFixed(1)}%`;
+      let rank = "F Tier (Poor Roll)";
+      if (avgRoll >= 95) rank = "S Tier (Perfect Compound Candidate)";
+      else if (avgRoll >= 85) rank = "A Tier (Great Roll)";
+      else if (avgRoll >= 70) rank = "B Tier (Average)";
+      else if (avgRoll >= 50) rank = "C Tier (Below Avg)";
+      document.getElementById('rankText').textContent = `Rank: ${rank}`;
+    } else {
+      document.getElementById('scoreText').textContent = "Equipment Quality: N/A";
+      document.getElementById('rankText').textContent = "Rank: -";
+    }
+
+    updateChart();
+  }
+
+  function updateChart() {
+    const ctx = document.getElementById('statChart').getContext('2d');
+    if (chartInstance) chartInstance.destroy();
+
+    const mode = selector.value;
+    const keys = Object.keys(lastStatsData);
+
+    if (keys.length === 0) return;
+
+    if (mode === 'Overview') {
+      const labels = keys;
+      const data = keys.map(k => lastStatsData[k].rollPct);
+      const bgColors = keys.map(k => lastStatsData[k].color);
+
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Equipment Quality (%)',
+            data: data,
+            backgroundColor: bgColors,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: true, position: 'top' },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  let k = context.label;
+                  let d = lastStatsData[k];
+                  return `${k}: ${context.raw.toFixed(1)}% (Cur: ${d.cur} / Max: ${d.max.toFixed(1)})`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: { min: 0, max: 110, title: { display: true, text: 'Equipment Quality (%)' } }
+          }
+        }
+      });
+    } else {
+      const d = lastStatsData[mode];
+      if (!d) return;
+
+      const spread = Math.max(1.0, (d.max - d.min) / 2.0);
+      const sigma = Math.max(0.5, spread / 2.0);
+      const points = [];
+
+      for (let x = Math.max(0, d.min - spread); x <= d.max + spread; x += (spread/30)) {
+        let pdf = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * Math.pow((x - d.avg) / sigma, 2));
+        points.push({ x: x, y: pdf });
+      }
+
+      let pdfCur = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * Math.pow((d.cur - d.avg) / sigma, 2));
+
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          datasets: [
+            {
+              label: `${mode} Bell Curve`,
+              data: points,
+              borderColor: d.color,
+              backgroundColor: d.color + '22',
+              fill: true,
+              tension: 0.4
+            },
+            {
+              label: `Current Roll (${d.cur})`,
+              data: [{ x: d.cur, y: pdfCur }],
+              backgroundColor: '#dc2626',
+              borderColor: '#ffffff',
+              pointRadius: 9,
+              pointHoverRadius: 11,
+              showLine: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          parsing: false,
+          plugins: {
+            legend: { display: true, position: 'top' },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `${mode} Value: ${context.raw.x.toFixed(1)} | Cur: ${d.cur} (Max: ${d.max.toFixed(1)})`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { type: 'linear', title: { display: true, text: `Stat Range [Min: ${d.min.toFixed(1)} | 80%: ${d.p80.toFixed(1)} | 95%: ${d.p95.toFixed(1)} | Max: ${d.max.toFixed(1)}]` } },
+            y: { title: { display: true, text: 'Probability Density' } }
+          }
+        }
+      });
+    }
+  }
+</script>
+</body>
+</html>
