@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trickster Online - Equipment Stat Analyzer</title>
+  <!-- Chart.js for responsive web graphs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg-color: #f1f5f9;
+      --card-bg: #ffffff;
+      --border-color: #cbd5e1;
+      --primary-text: #0f172a;
+      --sub-text: #475569;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--primary-text);
+      margin: 0;
+      padding: 15px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      max-width: 1100px;
+      width: 100%;
+      background: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.4rem;
+      margin-top: 0;
+      margin-bottom: 15px;
+      color: #1e293b;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f8fafc;
+      padding: 10px 15px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    .layout-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    @media (max-width: 850px) {
+      .layout-grid { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      background: #ffffff;
+    }
+
+    .panel-title {
+      font-weight: bold;
+      font-size: 0.95rem;
+      margin-bottom: 10px;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stat-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .stat-badge {
+      width: 42px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 0.8rem;
+      color: white;
+      padding: 3px 0;
+      border-radius: 4px;
+    }
+
+    .input-group {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .input-group label {
+      font-size: 0.75rem;
+      font-weight: bold;
+      color: var(--sub-text);
+    }
+
+    .step-btn {
+      width: 22px;
+      height: 24px;
+      border: 1px solid #cbd5e1;
+      background: #e2e8f0;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+
+    .step-btn:hover { background: #cbd5e1; }
+
+    input[type="number"] {
+      width: 42px;
+      height: 20px;
+      text-align: center;
+      border: 1px solid #cbd5e1;
+      border-radius: 3px;
+      font-size: 0.85rem;
+    }
+
+    .action-btns {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 0.85rem;
+      cursor: pointer;
+      color: white;
+      transition: opacity 0.2s;
+    }
+
+    .btn-analyze { background: #3b82f6; }
+    .btn-random { background: #f59e0b; }
+    .btn:hover { opacity: 0.9; }
+
+    .score-card {
+      background: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 8px;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .score-title { font-size: 0.9rem; font-weight: bold; color: #0369a1; }
+    .rank-title { font-size: 0.95rem; font-weight: bold; color: #b45309; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      text-align: center;
+    }
+
+    th, td {
+      border: 1px solid #e2e8f0;
+      padding: 5px;
+    }
+
+    th { background: #f1f5f9; color: #1e293b; }
+
+    .chart-container {
+      position: relative;
+      height: 280px;
+      width: 100%;
+    }
+
+    select {
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid #cbd5e1;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🌸 Trickster Online Equipment Stat Analyzer 🌸</h1>
+
+  <div class="top-bar">
+    <label style="font-size: 0.9rem; font-weight: bold; cursor: pointer;">
+      <input type="checkbox" id="goldStoneChk" onchange="calculateAndPlot()"> Apply Gold Tempering Stone (+15% Min & Max)
+    </label>
+  </div>
+
+  <div class="layout-grid">
+    <!-- Left: Inputs -->
+    <div class="panel">
+      <div class="panel-title">🛡️ Stat Ranges & Current Roll</div>
+      <div id="statRowsContainer"></div>
+      
+      <div class="action-btns">
+        <button class="btn btn-analyze" onclick="calculateAndPlot()">⚔️ Analyze & Score</button>
+        <button class="btn btn-random" onclick="randomizeInputs()">🎲 Randomize</button>
+      </div>
+    </div>
+
+    <!-- Right: Results Table -->
+    <div class="panel">
+      <div class="score-card">
+        <div class="score-title" id="scoreText">Stat Realization: N/A</div>
+        <div class="rank-title" id="rankText">Rank: -</div>
+      </div>
+      <div class="panel-title">📊 Threshold Values</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Stat</th>
+            <th>Cur</th>
+            <th>Min</th>
+            <th>Max</th>
+            <th>80%</th>
+            <th>95%</th>
+            <th>Roll %</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Bottom: Chart -->
+  <div class="panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <div class="panel-title" style="margin:0;">📈 Interactive Visualization</div>
+      <div>
+        <label style="font-size: 0.85rem; font-weight: bold;">View Mode: </label>
+        <select id="viewSelector" onchange="updateChart()"></select>
+      </div>
+    </div>
+    <div class="chart-container">
+      <canvas id="statChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+  const stats = [
+    { name: 'AP', color: '#e11d48' },
+    { name: 'AC', color: '#2563eb' },
+    { name: 'DX', color: '#059669' },
+    { name: 'MP', color: '#7c3aed' },
+    { name: 'MA', color: '#db2777' },
+    { name: 'MD', color: '#0d9488' },
+    { name: 'WT', color: '#64748b' },
+    { name: 'DA', color: '#16a34a' },
+    { name: 'LK', color: '#d97706' },
+    { name: 'HP', color: '#dc2626' },
+    { name: 'DP', color: '#4f46e5' },
+    { name: 'HV', color: '#ea580c' }
+  ];
+
+  let chartInstance = null;
+  let lastStatsData = {};
+
+  // Build UI Rows
+  const container = document.getElementById('statRowsContainer');
+  const selector = document.getElementById('viewSelector');
+  
+  // Add Overview option to selector
+  const optOverview = document.createElement('option');
+  optOverview.value = 'Overview';
+  optOverview.textContent = 'Overview (Quality Score)';
+  selector.appendChild(optOverview);
+
+  stats.forEach(s => {
+    // Add selector option
+    const opt = document.createElement('option');
+    opt.value = s.name;
+    opt.textContent = s.name;
+    selector.appendChild(opt);
+
+    // Build row
+    const row = document.createElement('div');
+    row.className = 'stat-row';
+    row.innerHTML = `
+      <div class="stat-badge" style="background:${s.color}">${s.name}</div>
+      <div class="input-group">
+        <label>Min:</label>
+        <button class="step-btn" onclick="adjust('${s.name}', 'min', -1)">-</button>
+        <input type="number" id="${s.name}_min" value="0" min="0">
+        <button class="step-btn" onclick="adjust('${s.name}', 'min', 1)">+</button>
+      </div>
+      <div class="input-group" style="margin-left: 6px;">
+        <label>Max:</label>
+        <button class="step-btn" onclick="adjust('${s.name}', 'max', -1)">-</button>
+        <input type="number" id="${s.name}_max" value="0" min="0">
+        <button class="step-btn" onclick="adjust('${s.name}', 'max', 1)">+</button>
+      </div>
+      <div class="input-group" style="margin-left: 6px;">
+        <label style="color:#0284c7">Cur:</label>
+        <button class="step-btn" onclick="adjust('${s.name}', 'cur', -1)">-</button>
+        <input type="number" id="${s.name}_cur" value="0" min="0">
+        <button class="step-btn" onclick="adjust('${s.name}', 'cur', 1)">+</button>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+
+  function adjust(stat, type, delta) {
+    const el = document.getElementById(`${stat}_${type}`);
+    let val = parseInt(el.value) || 0;
+    el.value = Math.max(0, val + delta);
+  }
+
+  function randomizeInputs() {
+    stats.forEach(s => {
+      let mx = Math.floor(Math.random() * 280) + 20;
+      let mn = Math.floor(Math.random() * (mx - 5)) + 5;
+      let cur = Math.floor(Math.random() * (mx - mn + 1)) + mn;
+      document.getElementById(`${s.name}_min`).value = mn;
+      document.getElementById(`${s.name}_max`).value = mx;
+      document.getElementById(`${s.name}_cur`).value = cur;
+    });
+    calculateAndPlot();
+  }
+
+  function calculateAndPlot() {
+    const isGold = document.getElementById('goldStoneChk').checked;
+    const mult = isGold ? 1.15 : 1.0;
+
+    let totalPct = 0;
+    let validCount = 0;
+    lastStatsData = {};
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+
+    stats.forEach(s => {
+      let mnRaw = parseInt(document.getElementById(`${s.name}_min`).value) || 0;
+      let mxRaw = parseInt(document.getElementById(`${s.name}_max`).value) || 0;
+      let cur = parseInt(document.getElementById(`${s.name}_cur`).value) || 0;
+
+      if (mnRaw === 0 && mxRaw === 0 && cur === 0) return;
+
+      let mn = mnRaw * mult;
+      let mx = mxRaw * mult;
+      let avg = (mn + mx) / 2.0;
+      let p80 = mx * 0.8;
+      let p95 = mx * 0.95;
+      let rollPct = mx > 0 ? (cur / mx) * 100 : (cur >= mn ? 100 : 0);
+
+      lastStatsData[s.name] = { cur, min: mn, max: mx, avg, p80, p95, rollPct, color: s.color };
+
+      if (mx > 0) {
+        totalPct += Math.min(100, rollPct);
+        validCount++;
+      }
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-weight:bold; color:${s.color}">${s.name}</td>
+        <td>${cur}</td>
+        <td>${mn.toFixed(1)}</td>
+        <td>${mx.toFixed(1)}</td>
+        <td>${p80.toFixed(1)}</td>
+        <td>${p95.toFixed(1)}</td>
+        <td style="font-weight:bold">${rollPct.toFixed(1)}%</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    if (validCount > 0) {
+      let avgRoll = totalPct / validCount;
+      document.getElementById('scoreText').textContent = `Stat Realization: ${avgRoll.toFixed(1)}%`;
+      let rank = "F Tier (Poor Roll)";
+      if (avgRoll >= 95) rank = "S Tier (Perfect Compound)";
+      else if (avgRoll >= 85) rank = "A Tier (Great Roll)";
+      else if (avgRoll >= 70) rank = "B Tier (Average)";
+      else if (avgRoll >= 50) rank = "C Tier (Below Avg)";
+      document.getElementById('rankText').textContent = `Rank: ${rank}`;
+    } else {
+      document.getElementById('scoreText').textContent = "Stat Realization: N/A";
+      document.getElementById('rankText').textContent = "Rank: -";
+    }
+
+    updateChart();
+  }
+
+  function updateChart() {
+    const ctx = document.getElementById('statChart').getContext('2d');
+    if (chartInstance) chartInstance.destroy();
+
+    const mode = selector.value;
+    const keys = Object.keys(lastStatsData);
+
+    if (keys.length === 0) return;
+
+    if (mode === 'Overview') {
+      const labels = keys;
+      const data = keys.map(k => lastStatsData[k].rollPct);
+      const bgColors = keys.map(k => lastStatsData[k].color);
+
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Realization Quality (%)',
+            data: data,
+            backgroundColor: bgColors,
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { min: 0, max: 110, title: { display: true, text: 'Quality (%)' } }
+          }
+        }
+      });
+    } else {
+      const d = lastStatsData[mode];
+      if (!d) return;
+
+      const spread = Math.max(1.0, (d.max - d.min) / 2.0);
+      const sigma = Math.max(0.5, spread / 2.0);
+      const points = [];
+      const labels = [];
+
+      for (let x = Math.max(0, d.min - spread); x <= d.max + spread; x += (spread/25)) {
+        let pdf = (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * Math.pow((x - d.avg) / sigma, 2));
+        points.push({ x: x, y: pdf });
+      }
+
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          datasets: [{
+            label: `${mode} Bell Curve`,
+            data: points,
+            borderColor: d.color,
+            backgroundColor: d.color + '22',
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          parsing: false,
+          scales: {
+            x: { type: 'linear', title: { display: true, text: 'Stat Value' } },
+            y: { title: { display: true, text: 'Probability Density' } }
+          }
+        }
+      });
+    }
+  }
+</script>
+</body>
+</html>
